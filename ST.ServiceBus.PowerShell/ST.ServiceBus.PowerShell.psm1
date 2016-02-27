@@ -13,6 +13,41 @@ function Get-SBNamespaceManager {
 }
 
 
+function Add-SBRule {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.Messaging.SubscriptionClient]$SubscriptionClient,
+        
+        [Parameter(Mandatory=$true,
+            ParameterSetName='RuleDescription')]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.Messaging.RuleDescription]$RuleDescription,
+        
+        [Parameter(Mandatory=$true,
+            ParameterSetName='NameFilter')]
+        [ValidateNotNullOrEmpty()]
+        [string]$Name,
+        
+        [Parameter(Mandatory=$true,
+            ParameterSetName='NameFilter')]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.Messaging.Filter]$Filter
+    )
+    
+    switch ($PSCmdlet.ParameterSetName) {
+        'RuleDescription' {
+            $SubscriptionClient.AddRule($RuleDescription)
+        }
+        
+        'NameFilter' {
+            $SubscriptionClient.AddRule($Name, $Filter)
+        }
+    }
+}
+
+
 function Get-SBQueue {
     [CmdletBinding(DefaultParameterSetName='All')]
     Param(
@@ -135,6 +170,29 @@ function Get-SBSubscription {
 }
 
 
+function Get-SBSubscriptionClient {
+    [CmdletBinding()]
+    [OutputType([Microsoft.ServiceBus.Messaging.SubscriptionClient])]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ConnectionString,
+        
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$TopicPath,
+        
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Name
+    )
+    
+    $subscriptionClient = [Microsoft.ServiceBus.Messaging.SubscriptionClient]::CreateFromConnectionString($ConnectionString, $TopicPath, $Name)
+    
+    $subscriptionClient
+}
+
+
 function Get-SBTopic {
     [CmdletBinding(DefaultParameterSetName='All')]
     Param(
@@ -200,7 +258,55 @@ function New-SBQueue {
             $qd2 = $NamespaceManager.CreateQueue($QueueDescription)
         }
     }
+}
 
+
+function New-SBRuleDescription {
+    [CmdletBinding(DefaultParameterSetName='DefaultValues')]
+    [OutputType([Microsoft.ServiceBus.Messaging.RuleDescription])]
+    Param(
+        [Parameter(Mandatory=$true,
+            ParameterSetName='Name')]
+        [Parameter(Mandatory=$true,
+            ParameterSetName='NameFilter')]
+        [ValidateNotNullOrEmpty()]
+        [string]$Name,
+        
+        [Parameter(Mandatory=$true,
+            ParameterSetName='Filter')]
+        [Parameter(Mandatory=$true,
+            ParameterSetName='NameFilter')]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.Messaging.SqlFilter]$Filter,
+        
+        [Parameter(Mandatory=$false)]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.Messaging.SqlRuleAction]$RuleAction
+    )
+    
+    switch ($PSCmdlet.ParameterSetName) {
+        'DefaultValues' {
+            $ruleDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.RuleDescription'
+        }
+        
+        'Filter' {
+            $ruleDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.RuleDescription' -ArgumentList $Filter
+        }
+        
+        'Name' {
+            $ruleDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.RuleDescription' -ArgumentList $Name
+        }
+        
+        'NameFilter' {
+            $ruleDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.RuleDescription' -ArgumentList @($Name, $Filter)
+        }
+    }
+    
+    if ($PSBoundParameters.ContainsKey('RuleAction')) {
+        $ruleDescription.Action = $RuleAction
+    }
+    
+    $ruleDescription
 }
 
 
@@ -311,6 +417,22 @@ function New-SBTopic {
             $qd2 = $NamespaceManager.CreateQueue($TopicDescription)
         }
     }
+}
+
+
+function Remove-SBRule {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.Messaging.SubscriptionClient]$SubscriptionClient,
+        
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Name
+    )
+    
+    $SubscriptionClient.RemoveRule($Name)
 }
 
 

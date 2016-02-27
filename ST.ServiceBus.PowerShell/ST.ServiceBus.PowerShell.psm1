@@ -379,7 +379,7 @@ function Update-SBQueue {
         [Microsoft.ServiceBus.Messaging.QueueDescription]$QueueDescription
     )
     
-    $NamespaceManager.UpdateQueue($Queue)
+    $NamespaceManager.UpdateQueue($QueueDescription)
 }
 
 
@@ -396,7 +396,7 @@ function Update-SBSubscription {
         [Microsoft.ServiceBus.Messaging.SubscriptionDescription]$SubscriptionDescription
     )
     
-    $NamespaceManager.UpdateTopic($SubscriptionDescription)
+    $NamespaceManager.UpdateSubscription($SubscriptionDescription)
 }
 
 

@@ -420,6 +420,22 @@ function New-SBTopic {
 }
 
 
+function Remove-SBQueue {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.NamespaceManager]$NamespaceManager,
+        
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Path
+    )
+    
+    $NamespaceManager.DeleteQueue($Path)
+}
+
+
 function Remove-SBRule {
     [CmdletBinding()]
     Param(
@@ -433,6 +449,42 @@ function Remove-SBRule {
     )
     
     $SubscriptionClient.RemoveRule($Name)
+}
+
+
+function Remove-SBSubscription {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.NamespaceManager]$NamespaceManager,
+        
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$TopicPath,
+        
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Name
+    )
+    
+    $NamespaceManager.DeleteSubscription($TopicPath, $Name)
+}
+
+
+function Remove-SBTopic {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.NamespaceManager]$NamespaceManager,
+        
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Path
+    )
+    
+    $NamespaceManager.DeleteTopic($Path)
 }
 
 

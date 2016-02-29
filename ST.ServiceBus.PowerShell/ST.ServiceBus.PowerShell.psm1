@@ -33,7 +33,7 @@ function Add-SBRule {
         [Parameter(Mandatory=$true,
             ParameterSetName='NameFilter')]
         [ValidateNotNull()]
-        [Microsoft.ServiceBus.Messaging.Filter]$Filter
+        [Microsoft.ServiceBus.Messaging.SqlFilter]$Filter
     )
     
     switch ($PSCmdlet.ParameterSetName) {
@@ -537,6 +537,40 @@ function Test-SBTopic {
     )
     
     $NamespaceManager.TopicExists($Path)
+}
+
+
+function Update-SBQueue {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.NamespaceManager]$NamespaceManager,
+        
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [Alias('Description')]
+        [Microsoft.ServiceBus.Messaging.QueueDescription]$QueueDescription
+    )
+    
+    $NamespaceManager.UpdateQueue($QueueDescription)
+}
+
+
+function Update-SBSubscription {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.NamespaceManager]$NamespaceManager,
+        
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [Alias('Description')]
+        [Microsoft.ServiceBus.Messaging.SubscriptionDescription]$SubscriptionDescription
+    )
+    
+    $NamespaceManager.UpdateSubscription($SubscriptionDescription)
 }
 
 

@@ -85,6 +85,28 @@ Describe 'Get-SBQueue' {
 }
 
 
+Describe 'Get-SBRule' {
+    It 'gets all rules for subscription' {
+        $rules = Get-SBRule -NamespaceManager $testsNamespaceManager -TopicPath 'test-topic1' -SubscriptionName 'test-subscr1'
+        $rules.Count | Should BeGreaterThan 0
+    }
+}
+
+
+Describe 'Get-SBSubscription' {
+    It 'gets all subscriptions for topic' {
+        $subscriptions = Get-SBSubscription -NamespaceManager $testsNamespaceManager -TopicPath 'test-topic1'
+        $subscriptions.Count | Should Be 3
+    }
+    
+    It 'gets specific subscription for topic' {
+        $subscriptions = Get-SBSubscription -NamespaceManager $testsNamespaceManager -TopicPath 'test-topic1' -Name 'test-subscr2'
+        $subscriptions.Count | Should Be 1
+        $subscriptions | Should BeOfType [Microsoft.ServiceBus.Messaging.SubscriptionDescription]
+    }
+}
+
+
 Describe 'Remove-SBQueue' {
     It 'successfully removes queue' {
         Test-SBQueue -NamespaceManager $testsNamespaceManager -Path 'test-queue1' | Should Be $true

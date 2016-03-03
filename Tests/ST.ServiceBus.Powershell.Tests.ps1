@@ -101,8 +101,75 @@ Describe 'Get-SBSubscription' {
     
     It 'gets specific subscription for topic' {
         $subscriptions = Get-SBSubscription -NamespaceManager $testsNamespaceManager -TopicPath 'test-topic1' -Name 'test-subscr2'
-        $subscriptions.Count | Should Be 1
         $subscriptions | Should BeOfType [Microsoft.ServiceBus.Messaging.SubscriptionDescription]
+        $subscriptions.Name | Should BeExactly 'test-subscr2'
+    }
+    
+    It 'can''t find specific topic and subscription' {
+        { Get-SBSubscription -NamespaceManager $testsNamespaceManager -TopicPath 'test-topic1' -Name 'nonexistsubscr' } | Should Throw
+        { Get-SBSubscription -NamespaceManager $testsNamespaceManager -TopicPath 'nonexisttopic' -Name 'test-subscr2' } | Should Throw
+    }
+}
+
+
+Describe 'Get-SBTopic' {
+    It 'gets all topics' {
+        $topics = Get-SBTopic -NamespaceManager $testsNamespaceManager
+        $topics.Count | Should Be 3
+    }
+    
+    It 'gets specific topic' {
+        $topics = Get-SBTopic -NamespaceManager $testsNamespaceManager -Path 'test-topic1'
+        $topics | Should BeOfType [Microsoft.ServiceBus.Messaging.TopicDescription]
+        $topics.Path | Should BeExactly 'test-topic1'
+    }
+    
+    It 'can''t find specific topic' {
+        { Get-SBTopic -NamespaceManager $testsNamespaceManager -Path 'nonexisttopic' } | Should Throw
+    }
+}
+
+
+Describe 'New-SBQueue' {
+    It 'creates queue using path' {
+        $queue = New-SBQueue -NamespaceManager $testsNamespaceManager -Path 'test-queue4'
+        $queue | Should BeOfType [Microsoft.ServiceBus.Messaging.QueueDescription]
+        $queue.Path | Should BeExactly 'test-queue4'
+    }
+    
+    # It 'creates queue using queue description' {
+    #     $queueDescription = New-SBQueueDescription -Path 'test-queue5'
+    #     $queue = New-SBQueue -NamespaceManager $testsNamespaceManager -QueueDescription $queueDescription
+    #     $queue | Should BeOfType [Microsoft.ServiceBus.Messaging.QueueDescription]
+    #     $queue.Path | Should BeExactly 'test-queue5'
+    # }
+    
+    It 'throws if can''t create queue with invalid characters in path' {
+        { $queue = New-SBQueue -NamespaceManager $testsNamespaceManager -Path 'test-!@#$%' } | Should Throw
+    }
+    
+    It 'thorws if queue already exists' {
+        { $queue = New-SBQueue -NamespaceManager $testsNamespaceManager -Path 'test-queue1' } | Should Throw
+    }
+}
+
+
+Describe 'New-SBTopic' {
+    It 'creates topic using path' {
+        $topic = New-SBTopic -NamespaceManager $testsNamespaceManager -Path 'test-topic4'
+        $topic | Should BeOfType [Microsoft.ServiceBus.Messaging.TopicDescription]
+        $topic.Path | Should BeExactly 'test-topic4'
+    }
+    
+    # It 'creates topic using topic description' {
+    # }
+    
+    It 'throws if can''t create topic with invalid characters in path' {
+        { $topic = New-SBTopic -NamespaceManager $testsNamespaceManager -Path 'test-!@#$%' } | Should Throw
+    }
+    
+    It 'thorws if topic already exists' {
+        { $topic = New-SBTopic -NamespaceManager $testsNamespaceManager -Path 'test-topic1' } | Should Throw
     }
 }
 

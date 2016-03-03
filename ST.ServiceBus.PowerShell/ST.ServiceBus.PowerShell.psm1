@@ -50,6 +50,8 @@ function Add-SBRule {
 
 function Get-SBQueue {
     [CmdletBinding(DefaultParameterSetName='All')]
+    [OutputType([Microsoft.ServiceBus.Messaging.QueueDescription[]])]
+    [OutputType([Microsoft.ServiceBus.Messaging.QueueDescription], ParameterSetName='Path')]
     Param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -86,6 +88,7 @@ function Get-SBQueue {
 
 function Get-SBRule {
     [CmdletBinding()]
+    [OutputType([Microsoft.ServiceBus.Messaging.RuleDescription[]])]
     Param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -127,6 +130,8 @@ function Get-SBRule {
 
 function Get-SBSubscription {
     [CmdletBinding(DefaultParameterSetName='TopicPath')]
+    [OutputType([Microsoft.ServiceBus.Messaging.SubscriptionDescription[]])]
+    [OutputType([Microsoft.ServiceBus.Messaging.SubscriptionDescription], ParameterSetName='Name')]
     Param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -195,6 +200,8 @@ function Get-SBSubscriptionClient {
 
 function Get-SBTopic {
     [CmdletBinding(DefaultParameterSetName='All')]
+    [OutputType([Microsoft.ServiceBus.Messaging.TopicDescription[]])]
+    [OutputType([Microsoft.ServiceBus.Messaging.TopicDescription], ParameterSetName='Path')]
     Param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -250,14 +257,15 @@ function New-SBQueue {
     
     switch ($PSCmdlet.ParameterSetName) {
         'Path' {
-            $qd = New-Object -TypeName Microsoft.ServiceBus.Messaging.QueueDescription -ArgumentList $Path
-            $qd2 = $NamespaceManager.CreateQueue($qd)
+            $queue = $NamespaceManager.CreateQueue($Path)
         }
         
         'Description' {
-            $qd2 = $NamespaceManager.CreateQueue($QueueDescription)
+            $queue = $NamespaceManager.CreateQueue($QueueDescription)
         }
     }
+    
+    $queue
 }
 
 
@@ -348,8 +356,8 @@ function New-SBSubscription {
             ParameterSetName='TopicPathNameFilter')]
         [Parameter(Mandatory=$true,
             ParameterSetName='SubscriptionDescriptionFilter')]
-        [ValidateNotNullOrEmpty()]
-        [string]$Filter,
+        [ValidateNotNull()]
+        [Microsoft.ServiceBus.Messaging.SqlFilter]$Filter,
         
         [Parameter(Mandatory=$true,
             ParameterSetName='TopicPathNameRuleDescription')]
@@ -409,14 +417,15 @@ function New-SBTopic {
     
     switch ($PSCmdlet.ParameterSetName) {
         'Path' {
-            $qd = New-Object -TypeName Microsoft.ServiceBus.Messaging.TopicDescription -ArgumentList $Path
-            $qd2 = $NamespaceManager.CreateTopic($qd)
+            $topic = $NamespaceManager.CreateTopic($Path)
         }
         
         'Description' {
-            $qd2 = $NamespaceManager.CreateQueue($TopicDescription)
+            $topic = $NamespaceManager.CreateTopic($TopicDescription)
         }
     }
+    
+    $topic
 }
 
 
@@ -490,6 +499,7 @@ function Remove-SBTopic {
 
 function Test-SBQueue {
     [CmdletBinding()]
+    [OutputType([bool])]
     Param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -506,6 +516,7 @@ function Test-SBQueue {
 
 function Test-SBSubscription {
     [CmdletBinding()]
+    [OutputType([bool])]
     Param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -526,6 +537,7 @@ function Test-SBSubscription {
 
 function Test-SBTopic {
     [CmdletBinding()]
+    [OutputType([bool])]
     Param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]

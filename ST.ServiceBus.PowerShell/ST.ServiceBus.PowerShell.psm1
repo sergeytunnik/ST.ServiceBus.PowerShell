@@ -269,6 +269,80 @@ function New-SBQueue {
 }
 
 
+function New-SBQueueDescription {
+    [CmdletBinding(DefaultParameterSetName='Path')]
+    [OutputType([Microsoft.ServiceBus.Messaging.QueueDescription])]
+    Param(
+        [Parameter(Mandatory=$true,
+            ParameterSetName='Path')]
+        [Parameter(Mandatory=$true,
+            ParameterSetName='PathProperties')]
+        [ValidateNotNullOrEmpty()]
+        [string]$Path,
+        
+        [Parameter(Mandatory=$true,
+            ParameterSetName='PathProperties')]
+        [Parameter(Mandatory=$true,
+            ParameterSetName='Properties')]
+        [ValidateNotNull()]
+        [hashtable]$Properties
+    )
+    
+    $validProperties = @('AutoDeleteOnIdle',
+        'DefaultMessageTimeToLive',
+        'DuplicateDetectionHistoryTimeWindow',
+        'EnableBatchedOperations',
+        'EnableDeadLetteringOnMessageExpiration',
+        'EnableExpress',
+        'EnablePartitioning',
+        #'ExtensionData',
+        'ForwardDeadLetteredMessagesTo',
+        'ForwardTo',
+        'IsAnonymousAccessible',
+        'LockDuration',
+        'MaxDeliveryCount',
+        'MaxSizeInMegabytes',
+        'Path',
+        'RequiresDuplicateDetection',
+        'RequiresSession',
+        'Status',
+        'SupportOrdering',
+        'UserMetadata')
+    
+    switch ($PSCmdlet.ParameterSetName) {
+        'Path' {
+            $queueDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.QueueDescription' -ArgumentList $Path
+        }
+        
+        'PathProperties' {
+            $queueDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.QueueDescription' -ArgumentList $Path
+            
+            foreach ($key in $Properties.Keys) {
+                if ($validProperties -contains $key) {
+                    $queueDescription.$key = $Properties[$key]
+                } else {
+                    Write-Warning -Message "$key isn't valid QueueDescription property. Skipping."
+                }
+            }
+        }
+        
+        'Properties' {
+            $queueDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.QueueDescription' -ArgumentList $Properties['Path']
+            
+            foreach ($key in $Properties.Keys) {
+                if ($validProperties -contains $key) {
+                    $queueDescription.$key = $Properties[$key]
+                } else {
+                    Write-Warning -Message "$key isn't valid QueueDescription property. Skipping."
+                }
+            }
+        }
+    }
+    
+    $queueDescription
+}
+
+
 function New-SBRuleDescription {
     [CmdletBinding(DefaultParameterSetName='DefaultValues')]
     [OutputType([Microsoft.ServiceBus.Messaging.RuleDescription])]
@@ -320,6 +394,7 @@ function New-SBRuleDescription {
 
 function New-SBSubscription {
     [CmdletBinding()]
+    [OutputType([Microsoft.ServiceBus.Messaging.SubscriptionDescription])]
     Param(
         [Parameter(Mandatory=$true)]
         [ValidateNotNull()]
@@ -369,31 +444,31 @@ function New-SBSubscription {
     
     switch ($PSCmdlet.ParameterSetName) {
         'SubscriptionDescription' {
-            $subscriptions = $NamespaceManager.CreateSubscriptions($SubscriptionDescription)
+            $subscription = $NamespaceManager.CreateSubscription($SubscriptionDescription)
         }
         
         'SubscriptionDescriptionFilter' {
-            $subscriptions = $NamespaceManager.CreateSubscriptions($SubscriptionDescription, $Filter)
+            $subscription = $NamespaceManager.CreateSubscription($SubscriptionDescription, $Filter)
         }
         
         'SubscriptionDescriptionRuleDescription' {
-            $subscriptions = $NamespaceManager.CreateSubscriptions($SubscriptionDescription, $RuleDescription)
+            $subscription = $NamespaceManager.CreateSubscription($SubscriptionDescription, $RuleDescription)
         }
         
         'TopicPathName' {
-            $subscriptions = $NamespaceManager.CreateSubscription($TopicPath, $Name)
+            $subscription = $NamespaceManager.CreateSubscription($TopicPath, $Name)
         }
         
         'TopicPathNameFilter' {
-            $subscriptions = $NamespaceManager.CreateSubscription($TopicPath, $Name, $Filter)
+            $subscription = $NamespaceManager.CreateSubscription($TopicPath, $Name, $Filter)
         }
         
         'TopicPathNameRuleDescription' {
-            $subscriptions = $NamespaceManager.CreateSubscription($TopicPath, $Name, $RuleDescription)
+            $subscription = $NamespaceManager.CreateSubscription($TopicPath, $Name, $RuleDescription)
         }
     }
     
-    $subscriptions
+    $subscription
 }
 
 

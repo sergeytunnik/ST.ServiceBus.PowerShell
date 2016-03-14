@@ -137,12 +137,13 @@ Describe 'New-SBQueue' {
         $queue.Path | Should BeExactly 'test-queue4'
     }
     
-    # It 'creates queue using queue description' {
-    #     $queueDescription = New-SBQueueDescription -Path 'test-queue5'
-    #     $queue = New-SBQueue -NamespaceManager $testsNamespaceManager -QueueDescription $queueDescription
-    #     $queue | Should BeOfType [Microsoft.ServiceBus.Messaging.QueueDescription]
-    #     $queue.Path | Should BeExactly 'test-queue5'
-    # }
+    It 'creates queue using queue description' {
+        $queueDescription = New-SBQueueDescription -Path 'test-queue5' -Properties @{'MaxDeliveryCount' = 13}
+        $queue = New-SBQueue -NamespaceManager $testsNamespaceManager -QueueDescription $queueDescription
+        $queue | Should BeOfType [Microsoft.ServiceBus.Messaging.QueueDescription]
+        $queue.Path | Should BeExactly 'test-queue5'
+        $queue.MaxDeliveryCount | Should Be 13
+    }
     
     It 'throws if can''t create queue with invalid characters in path' {
         { $queue = New-SBQueue -NamespaceManager $testsNamespaceManager -Path 'test-!@#$%' } | Should Throw
@@ -154,6 +155,66 @@ Describe 'New-SBQueue' {
 }
 
 
+Describe 'New-SBSubscription' {
+    It 'creates subscription using subscription description' {
+        $topicPath = 'test-topic1'
+        $name = 'test-subscription4'
+        
+        $subscriptionDescription = New-SBSubscriptionDescription -TopicPath $topicPath -Name $name -Properties @{'MaxDeliveryCount' = 13}
+        
+        $subscription = New-SBSubscription -NamespaceManager $testsNamespaceManager -SubscriptionDescription $subscriptionDescription  
+        $subscription | Should BeOfType [Microsoft.ServiceBus.Messaging.SubscriptionDescription]
+        $subscription.TopicPath | Should BeExactly $topicPath
+        $subscription.Name | Should BeExactly $name
+        $subscription.MaxDeliveryCount | Should Be 13
+    }
+
+
+    It 'creates subscription using TopicPath and Name' {
+        $topicPath = 'test-topic2'
+        $name = 'test-subscription4'
+        
+        $subscription = New-SBSubscription -NamespaceManager $testsNamespaceManager -TopicPath $topicPath -Name $name 
+        $subscription | Should BeOfType [Microsoft.ServiceBus.Messaging.SubscriptionDescription]
+        $subscription.TopicPath | Should BeExactly $topicPath
+        $subscription.Name | Should BeExactly $name
+    }
+    
+    It 'creates subscription using TopicPath,Name and Filter' {
+        $topicPath = 'test-topic1'
+        $name = 'test-subscription5'
+        $filter = 'Priority < 42'
+        
+        $subscription = New-SBSubscription -NamespaceManager $testsNamespaceManager -TopicPath $topicPath -Name $name -Filter $filter 
+        $subscription | Should BeOfType [Microsoft.ServiceBus.Messaging.SubscriptionDescription]
+        $subscription.TopicPath | Should BeExactly $topicPath
+        $subscription.Name | Should BeExactly $name
+        
+        $rule = Get-SBRule -NamespaceManager $testsNamespaceManager -TopicPath $topicPath -SubscriptionName $name
+        $rule.Filter.SqlExpression | Should BeExactly $filter
+    }
+    
+    It 'creates subscription using TopicPath,Name and RuleDescription' {
+        $topicPath = 'test-topic1'
+        $name = 'test-subscription6'
+        $ruleName = 'test-rule1'
+        $filter = 'Size < 12'
+        $ruleAction = 'Set TextSize = "S"'
+        $ruleDescription = New-SBRuleDescription -Name $ruleName -Filter $filter -RuleAction $ruleAction
+        
+        $subscription = New-SBSubscription -NamespaceManager $testsNamespaceManager -TopicPath $topicPath -Name $name -RuleDescription $ruleDescription 
+        $subscription | Should BeOfType [Microsoft.ServiceBus.Messaging.SubscriptionDescription]
+        $subscription.TopicPath | Should BeExactly $topicPath
+        $subscription.Name | Should BeExactly $name
+        
+        $rule = Get-SBRule -NamespaceManager $testsNamespaceManager -TopicPath $topicPath -SubscriptionName $name
+        $rule.Name | Should BeExactly $ruleName
+        $rule.Filter.SqlExpression | Should BeExactly $filter
+        $rule.Action.SqlExpression | Should BeExactly $ruleAction
+    }
+}
+
+
 Describe 'New-SBTopic' {
     It 'creates topic using path' {
         $topic = New-SBTopic -NamespaceManager $testsNamespaceManager -Path 'test-topic4'
@@ -161,8 +222,15 @@ Describe 'New-SBTopic' {
         $topic.Path | Should BeExactly 'test-topic4'
     }
     
-    # It 'creates topic using topic description' {
-    # }
+    It 'creates topic using topic description' {
+        $path = 'test-topic5'
+        $topicDescription = New-SBTopicDescription -Path $path -Properties @{'MaxSizeInMegabytes' = 4096}
+        
+        $topic = New-SBTopic -NamespaceManager $testsNamespaceManager -TopicDescription $topicDescription
+        $topic | Should BeOfType [Microsoft.ServiceBus.Messaging.TopicDescription]
+        $topic.Path | Should BeExactly $path
+        $topic.MaxSizeInMegabytes | Should Be 4096
+    }
     
     It 'throws if can''t create topic with invalid characters in path' {
         { $topic = New-SBTopic -NamespaceManager $testsNamespaceManager -Path 'test-!@#$%' } | Should Throw

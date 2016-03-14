@@ -58,7 +58,7 @@ RequiredAssemblies = @('Microsoft.ServiceBus.dll')
 # NestedModules = @()
 
 # Functions to export from this module
-FunctionsToExport = '*'
+FunctionsToExport = '*-SB*'
 
 # Cmdlets to export from this module
 CmdletsToExport = '*'

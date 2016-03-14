@@ -1,15 +1,38 @@
-function Get-SBNamespaceManager {
+function ApplyEntityProperties {
     [CmdletBinding()]
-    [OutputType([Microsoft.ServiceBus.NamespaceManager])]
     Param(
         [Parameter(Mandatory=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string]$ConnectionString
+        [object]$Entity,
+        
+        [Parameter(Mandatory=$true)]
+        [hashtable]$Properties
     )
     
-    $namespaceManager = [Microsoft.ServiceBus.NamespaceManager]::CreateFromConnectionString($ConnectionString)
+    $validProperties = @{
+        'QueueDescription' = @('AutoDeleteOnIdle', 'DefaultMessageTimeToLive', 'DuplicateDetectionHistoryTimeWindow',
+            'EnableBatchedOperations', 'EnableDeadLetteringOnMessageExpiration', 'EnableExpress', 'EnablePartitioning',
+            'ForwardDeadLetteredMessagesTo', 'ForwardTo', 'IsAnonymousAccessible', 'LockDuration', 'MaxDeliveryCount',
+            'MaxSizeInMegabytes', 'Path', 'RequiresDuplicateDetection', 'RequiresSession', 'Status', 'SupportOrdering',
+            'UserMetadata');
+            
+        'SubscriptionDescription' = @('AutoDeleteOnIdle', 'DefaultMessageTimeToLive', 'EnableBatchedOperations',
+            'EnableDeadLetteringOnFilterEvaluationExceptions', 'EnableDeadLetteringOnMessageExpiration',
+            'ForwardDeadLetteredMessagesTo', 'ForwardTo', 'LockDuration', 'MaxDeliveryCount', 'Name', 'RequiresSession',
+            'Status', 'TopicPath', 'UserMetadata');
+            
+        'TopicDescription' = @('AutoDeleteOnIdle', 'DefaultMessageTimeToLive', 'DuplicateDetectionHistoryTimeWindow',
+            'EnableBatchedOperations', 'EnableExpress', 'EnableFilteringMessagesBeforePublishing', 'EnablePartitioning',
+            'IsAnonymousAccessible', 'MaxSizeInMegabytes', 'Path', 'RequiresDuplicateDetection', 'Status',
+            'SupportOrdering', 'UserMetadata')
+    }
     
-    $namespaceManager
+    $entityType = $Entity.GetType().Name
+
+    foreach ($key in $Properties.Keys) {
+        if ($validProperties[$entityType] -contains $key) {
+            $Entity.$key = $Properties[$key]
+        }
+    }
 }
 
 
@@ -45,6 +68,21 @@ function Add-SBRule {
             $SubscriptionClient.AddRule($Name, $Filter)
         }
     }
+}
+
+
+function Get-SBNamespaceManager {
+    [CmdletBinding()]
+    [OutputType([Microsoft.ServiceBus.NamespaceManager])]
+    Param(
+        [Parameter(Mandatory=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$ConnectionString
+    )
+    
+    $namespaceManager = [Microsoft.ServiceBus.NamespaceManager]::CreateFromConnectionString($ConnectionString)
+    
+    $namespaceManager
 }
 
 
@@ -275,67 +313,28 @@ function New-SBQueueDescription {
     Param(
         [Parameter(Mandatory=$true,
             ParameterSetName='Path')]
-        [Parameter(Mandatory=$true,
-            ParameterSetName='PathProperties')]
         [ValidateNotNullOrEmpty()]
         [string]$Path,
         
-        [Parameter(Mandatory=$true,
-            ParameterSetName='PathProperties')]
+        [Parameter(Mandatory=$false,
+            ParameterSetName='Path')]
         [Parameter(Mandatory=$true,
             ParameterSetName='Properties')]
         [ValidateNotNull()]
         [hashtable]$Properties
     )
     
-    $validProperties = @('AutoDeleteOnIdle',
-        'DefaultMessageTimeToLive',
-        'DuplicateDetectionHistoryTimeWindow',
-        'EnableBatchedOperations',
-        'EnableDeadLetteringOnMessageExpiration',
-        'EnableExpress',
-        'EnablePartitioning',
-        #'ExtensionData',
-        'ForwardDeadLetteredMessagesTo',
-        'ForwardTo',
-        'IsAnonymousAccessible',
-        'LockDuration',
-        'MaxDeliveryCount',
-        'MaxSizeInMegabytes',
-        'Path',
-        'RequiresDuplicateDetection',
-        'RequiresSession',
-        'Status',
-        'SupportOrdering',
-        'UserMetadata')
-    
     switch ($PSCmdlet.ParameterSetName) {
         'Path' {
             $queueDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.QueueDescription' -ArgumentList $Path
-        }
-        
-        'PathProperties' {
-            $queueDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.QueueDescription' -ArgumentList $Path
             
-            foreach ($key in $Properties.Keys) {
-                if ($validProperties -contains $key) {
-                    $queueDescription.$key = $Properties[$key]
-                } else {
-                    Write-Warning -Message "$key isn't valid QueueDescription property. Skipping."
-                }
-            }
+            ApplyEntityProperties -Entity $queueDescription -Properties $Properties
         }
         
         'Properties' {
             $queueDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.QueueDescription' -ArgumentList $Properties['Path']
             
-            foreach ($key in $Properties.Keys) {
-                if ($validProperties -contains $key) {
-                    $queueDescription.$key = $Properties[$key]
-                } else {
-                    Write-Warning -Message "$key isn't valid QueueDescription property. Skipping."
-                }
-            }
+            ApplyEntityProperties -Entity $queueDescription -Properties $Properties
         }
     }
     
@@ -472,6 +471,46 @@ function New-SBSubscription {
 }
 
 
+function New-SBSubscriptionDescription {
+    [CmdletBinding(DefaultParameterSetName='TopicPathName')]
+    [OutputType([Microsoft.ServiceBus.Messaging.SubscriptionDescription])]
+    Param(
+        [Parameter(Mandatory=$true,
+            ParameterSetName='TopicPathName')]
+        [ValidateNotNullOrEmpty()]
+        [string]$TopicPath,
+        
+        [Parameter(Mandatory=$true,
+            ParameterSetName='TopicPathName')]
+        [ValidateNotNullOrEmpty()]
+        [string]$Name,
+        
+        [Parameter(Mandatory=$false,
+            ParameterSetName='TopicPathName')]
+        [Parameter(Mandatory=$true,
+            ParameterSetName='Properties')]
+        [ValidateNotNull()]
+        [hashtable]$Properties
+    )
+
+    switch ($PSCmdlet.ParameterSetName) {
+        'TopicPathName' {
+            $subscriptionDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.SubscriptionDescription' -ArgumentList @($TopicPath, $Name)
+            
+            ApplyEntityProperties -Entity $subscriptionDescription -Properties $Properties
+        }
+        
+        'Properties' {
+            $subscriptionDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.SubscriptionDescription' -ArgumentList @($Properties['TopicPath'], $Properties['Name'])
+            
+            ApplyEntityProperties -Entity $subscriptionDescription -Properties $Properties
+        }
+    }
+    
+    $subscriptionDescription
+}
+
+
 function New-SBTopic {
     [CmdletBinding()]
     Param(
@@ -501,6 +540,41 @@ function New-SBTopic {
     }
     
     $topic
+}
+
+
+function New-SBTopicDescription {
+    [CmdletBinding(DefaultParameterSetName='Path')]
+    [OutputType([Microsoft.ServiceBus.Messaging.TopicDescription])]
+    Param(
+        [Parameter(Mandatory=$true,
+            ParameterSetName='Path')]
+        [ValidateNotNullOrEmpty()]
+        [string]$Path,
+        
+        [Parameter(Mandatory=$false,
+            ParameterSetName='Path')]
+        [Parameter(Mandatory=$true,
+            ParameterSetName='Properties')]
+        [ValidateNotNull()]
+        [hashtable]$Properties
+    )
+    
+    switch ($PSCmdlet.ParameterSetName) {
+        'Path' {
+            $topicDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.TopicDescription' -ArgumentList $Path
+            
+            ApplyEntityProperties -Entity $topicDescription -Properties $Properties
+        }
+
+        'Properties' {
+            $topicDescription = New-Object -TypeName 'Microsoft.ServiceBus.Messaging.TopicDescription' -ArgumentList $Properties['Path']
+            
+            ApplyEntityProperties -Entity $topicDescription -Properties $Properties
+        }
+    }
+    
+    $topicDescription
 }
 
 
